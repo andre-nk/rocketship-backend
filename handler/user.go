@@ -1,6 +1,7 @@
 package handler
 
 import (
+	"fmt"
 	"net/http"
 	"rocketship/helper"
 	"rocketship/user"
@@ -158,6 +159,69 @@ func (handler *userHandler) ValidateEmail(context *gin.Context) {
 
 	response := helper.APIResponse(
 		metaMessage,
+		http.StatusOK,
+		"success",
+		data,
+	)
+
+	context.JSON(http.StatusOK, response)
+}
+
+func (handler *userHandler) UploadAvatar(context *gin.Context) {
+	userID := 1
+	file, err := context.FormFile("avatar")
+	if err != nil {
+		data := gin.H{
+			"is_uploaded": false,
+		}
+
+		response := helper.APIResponse(
+			"Failed to upload avatar due to bad input",
+			http.StatusUnprocessableEntity,
+			"error",
+			data,
+		)
+
+		context.JSON(http.StatusUnprocessableEntity, response)
+	}
+
+	path := fmt.Sprintf("images/%d-%s", userID, file.Filename)
+	err = context.SaveUploadedFile(file, path)
+	if err != nil {
+		data := gin.H{
+			"is_uploaded": false,
+		}
+
+		response := helper.APIResponse(
+			"Failed to save avatar due to server error",
+			http.StatusBadRequest,
+			"error",
+			data,
+		)
+
+		context.JSON(http.StatusBadRequest, response)
+	}
+
+	//TODO
+	_, err = handler.userService.UploadAvatar(userID, path)
+	if err != nil {
+		data := gin.H{
+			"is_uploaded": false,
+		}
+
+		response := helper.APIResponse(
+			"Failed to upload avatar due to server error",
+			http.StatusBadRequest,
+			"error",
+			data,
+		)
+
+		context.JSON(http.StatusBadRequest, response)
+	}
+
+	data := gin.H{"is_uploaded": true}
+	response := helper.APIResponse(
+		"User's avatar updated",
 		http.StatusOK,
 		"success",
 		data,
