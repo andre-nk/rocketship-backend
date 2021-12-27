@@ -111,3 +111,57 @@ func (handler *userHandler) Login(context *gin.Context) {
 
 	context.JSON(http.StatusOK, response)
 }
+
+func (handler *userHandler) ValidateEmail(context *gin.Context) {
+	var input user.EmailValidatorInput
+
+	err := context.ShouldBindJSON(&input)
+	if err != nil {
+		errors := helper.FormatError(err)
+
+		errorMessage := gin.H{"errors": errors}
+
+		response := helper.APIResponse(
+			"E-mail validation failed due to bad inputs",
+			http.StatusUnprocessableEntity,
+			"failed",
+			errorMessage,
+		)
+		context.JSON(http.StatusBadRequest, response)
+		return
+	}
+
+	isEmailAvailable, err := handler.userService.ValidateEmail(input)
+	if err != nil {
+		errors := helper.FormatError(err)
+
+		errorMessage := gin.H{"errors": errors}
+
+		response := helper.APIResponse(
+			"E-mail validation failed due to server error",
+			http.StatusBadGateway,
+			"failed",
+			errorMessage,
+		)
+		context.JSON(http.StatusBadRequest, response)
+		return
+	}
+
+	data := gin.H{
+		"is_available": isEmailAvailable,
+	}
+
+	metaMessage := "This e-mail address is available"
+	if !isEmailAvailable {
+		metaMessage = "This e-mail address is used"
+	}
+
+	response := helper.APIResponse(
+		metaMessage,
+		http.StatusOK,
+		"success",
+		data,
+	)
+
+	context.JSON(http.StatusOK, response)
+}
