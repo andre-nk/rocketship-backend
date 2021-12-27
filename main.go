@@ -1,7 +1,9 @@
 package main
 
 import (
+	"fmt"
 	"log"
+	"rocketship/auth"
 	"rocketship/handler"
 	"rocketship/user"
 
@@ -20,7 +22,19 @@ func main() {
 
 	userRepository := user.NewRepository(db)
 	userService := user.NewService(userRepository)
-	userHandler := handler.NewUserHandler(userService)
+	authService := auth.NewJWTService()
+	userHandler := handler.NewUserHandler(userService, authService)
+
+	token, err := authService.ValidateToken("eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VyX2lkIjoxOH0.nR_OBhtxFLbDYcqdsPckAIu9in0m1BH3QqnVK5HvXZY")
+	if err != nil {
+		fmt.Println(err.Error())
+	}
+
+	if token.Valid {
+		fmt.Println("VALID")
+	} else {
+		fmt.Println("INVALID")
+	}
 
 	router := gin.Default()
 	api := router.Group("api/v1")
