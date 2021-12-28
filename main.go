@@ -1,12 +1,15 @@
 package main
 
 import (
-	"fmt"
 	"log"
+	"net/http"
 	"rocketship/auth"
 	"rocketship/handler"
+	"rocketship/helper"
 	"rocketship/user"
+	"strings"
 
+	"github.com/dgrijalva/jwt-go"
 	"github.com/gin-gonic/gin"
 	"gorm.io/driver/mysql"
 	"gorm.io/gorm"
@@ -25,24 +28,78 @@ func main() {
 	authService := auth.NewJWTService()
 	userHandler := handler.NewUserHandler(userService, authService)
 
-	token, err := authService.ValidateToken("eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VyX2lkIjoxOH0.nR_OBhtxFLbDYcqdsPckAIu9in0m1BH3QqnVK5HvXZY")
-	if err != nil {
-		fmt.Println(err.Error())
-	}
-
-	if token.Valid {
-		fmt.Println("VALID")
-	} else {
-		fmt.Println("INVALID")
-	}
-
 	router := gin.Default()
 	api := router.Group("api/v1")
 
 	api.POST("/users", userHandler.RegisterUser)
 	api.POST("/sessions", userHandler.Login)
 	api.POST("/validate_email", userHandler.ValidateEmail)
-	api.POST("/avatars", userHandler.UploadAvatar)
+	api.POST("/avatars", authMiddleware(authService, userService), userHandler.UploadAvatar)
 
 	router.Run()
+}
+
+func authMiddleware(authService auth.Service, userService user.Service) gin.HandlerFunc {
+	return func(context *gin.Context) {
+		authHeader := context.GetHeader("Authorization")
+
+		if !strings.Contains(authHeader, "Bearer") {
+			response := helper.APIResponse(
+				"Unauthorized request",
+				http.StatusUnauthorized,
+				"",
+				nil,
+			)
+			context.AbortWithStatusJSON(http.StatusUnauthorized, response)
+			return
+		}
+
+		var tokenString string
+		tokenArray := strings.Split(authHeader, " ")
+		if len(tokenArray) == 2 {
+			tokenString = tokenArray[1]
+		}
+
+		token, err := authService.ValidateToken(tokenString)
+
+		if err != nil {
+			response := helper.APIResponse(
+				"Unauthorized request due to invalid token",
+				http.StatusUnauthorized,
+				"",
+				nil,
+			)
+			context.AbortWithStatusJSON(http.StatusUnauthorized, response)
+			return
+		}
+
+		claim, ok := token.Claims.(jwt.MapClaims)
+
+		if !ok || !token.Valid {
+			response := helper.APIResponse(
+				"Unauthorized request due to invalid token",
+				http.StatusUnauthorized,
+				"",
+				nil,
+			)
+			context.AbortWithStatusJSON(http.StatusUnauthorized, response)
+			return
+		}
+
+		userID := int(claim["user_id"].(float64))
+		user, err := userService.FindUserByID(userID)
+
+		if err != nil {
+			response := helper.APIResponse(
+				"User search failed due to server error",
+				http.StatusBadRequest,
+				"",
+				nil,
+			)
+			context.AbortWithStatusJSON(http.StatusBadRequest, response)
+			return
+		}
+
+		context.Set("currentUser", user)
+	}
 }

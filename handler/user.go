@@ -196,7 +196,9 @@ func (handler *userHandler) ValidateEmail(context *gin.Context) {
 }
 
 func (handler *userHandler) UploadAvatar(context *gin.Context) {
-	userID := 1
+	currentUser := context.MustGet("currentUser").(user.User)
+	userID := currentUser.ID
+
 	file, err := context.FormFile("avatar")
 	if err != nil {
 		data := gin.H{
