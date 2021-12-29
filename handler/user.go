@@ -89,7 +89,7 @@ func (handler *userHandler) Login(context *gin.Context) {
 			"failed",
 			errorMessage,
 		)
-		context.JSON(http.StatusBadRequest, response)
+		context.JSON(http.StatusUnprocessableEntity, response)
 		return
 	}
 

@@ -4,6 +4,7 @@ import (
 	"log"
 	"net/http"
 	"rocketship/auth"
+	"rocketship/campaign"
 	"rocketship/handler"
 	"rocketship/helper"
 	"rocketship/user"
@@ -23,18 +24,32 @@ func main() {
 		log.Fatal(err)
 	}
 
+	//AUTH
+	authService := auth.NewJWTService()
+
+	//USER
 	userRepository := user.NewRepository(db)
 	userService := user.NewService(userRepository)
-	authService := auth.NewJWTService()
 	userHandler := handler.NewUserHandler(userService, authService)
 
+	//CAMPAIGN
+	campaignRepository := campaign.NewRepository(db)
+	campaignService := campaign.NewService(campaignRepository)
+	campaignHandler := handler.NewCampaignHandler(campaignService)
+
+	//ROUTER CONFIG
 	router := gin.Default()
+	router.Static("/images", "./images")
 	api := router.Group("api/v1")
 
+	//AUTH ROUTES
 	api.POST("/users", userHandler.RegisterUser)
 	api.POST("/sessions", userHandler.Login)
 	api.POST("/validate_email", userHandler.ValidateEmail)
 	api.POST("/avatars", authMiddleware(authService, userService), userHandler.UploadAvatar)
+
+	//CAMPAIGN ROUTES
+	api.GET("/campaigns", campaignHandler.FindCampaign)
 
 	router.Run()
 }
