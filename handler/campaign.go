@@ -4,6 +4,7 @@ import (
 	"net/http"
 	"rocketship/campaign"
 	"rocketship/helper"
+	"rocketship/user"
 	"strconv"
 
 	"github.com/gin-gonic/gin"
@@ -74,6 +75,45 @@ func (handler *campaignHandler) FindCampaign(context *gin.Context) {
 		http.StatusOK,
 		"success",
 		campaign.FormatCampaignDetail(campaignByID),
+	)
+	context.JSON(http.StatusOK, response)
+}
+
+func (handler *campaignHandler) CreateCampaign(context *gin.Context) {
+	var input campaign.CreateCampaignInput
+
+	err := context.ShouldBindJSON(&input)
+	if err != nil {
+		response := helper.APIResponse(
+			"Failed to create campaign due to bad inputs",
+			http.StatusUnprocessableEntity,
+			"failed",
+			err.Error(),
+		)
+		context.JSON(http.StatusUnprocessableEntity, response)
+		return
+	}
+
+	currentUser := context.MustGet("currentUser").(user.User)
+	input.User = currentUser
+
+	newCampaign, err := handler.service.CreateCampaign(input)
+	if err != nil {
+		response := helper.APIResponse(
+			"Failed to create campaign due to server error",
+			http.StatusBadRequest,
+			"failed",
+			err.Error(),
+		)
+		context.JSON(http.StatusBadRequest, response)
+		return
+	}
+
+	response := helper.APIResponse(
+		"Campaign successfully created!",
+		http.StatusOK,
+		"failed",
+		campaign.FormatCampaign(newCampaign),
 	)
 	context.JSON(http.StatusOK, response)
 }

@@ -37,6 +37,10 @@ func main() {
 	campaignService := campaign.NewService(campaignRepository)
 	campaignHandler := handler.NewCampaignHandler(campaignService)
 
+	//SANDBOX HERE===========================================
+
+	//SANDBOX END============================================
+
 	//ROUTER CONFIG
 	router := gin.Default()
 	router.Static("/images", "./images")
@@ -51,6 +55,7 @@ func main() {
 	//CAMPAIGN ROUTES
 	api.GET("/campaigns", campaignHandler.FindCampaigns)
 	api.GET("/campaigns/:id", campaignHandler.FindCampaign)
+	api.POST("/campaigns", authMiddleware(authService, userService), campaignHandler.CreateCampaign)
 
 	router.Run()
 }
