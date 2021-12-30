@@ -45,6 +45,15 @@ func main() {
 
 	//SANDBOX HERE===========================================
 
+	testUser, _ := userService.FindUserByID(5)
+
+	input := transaction.CreateTransactionInput{
+		CampaignID: 1,
+		Amount:     100,
+		User:       testUser,
+	}
+
+	transactionService.CreateTransaction(input)
 	//SANDBOX END============================================
 
 	//ROUTER CONFIG
@@ -68,6 +77,7 @@ func main() {
 	//TRANSACTION ROUTES
 	api.GET("/campaigns/:id/transactions", authMiddleware(authService, userService), transactionHandler.FindTransactionByCampaignID)
 	api.GET("/transactions", authMiddleware(authService, userService), transactionHandler.FindTransactionByUserID)
+	api.POST("/transactions", authMiddleware(authService, userService), transactionHandler.CreateTransaction)
 
 	router.Run()
 }

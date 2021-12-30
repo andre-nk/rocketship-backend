@@ -113,7 +113,7 @@ func (handler *campaignHandler) CreateCampaign(context *gin.Context) {
 	response := helper.APIResponse(
 		"Campaign successfully created!",
 		http.StatusOK,
-		"failed",
+		"success",
 		campaign.FormatCampaign(newCampaign),
 	)
 	context.JSON(http.StatusOK, response)

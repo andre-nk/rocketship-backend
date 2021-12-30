@@ -5,6 +5,7 @@ import "gorm.io/gorm"
 type Repository interface {
 	FindTransactionByCampaignID(campaignID int) ([]Transaction, error)
 	FindTransactionByUserID(userID int) ([]Transaction, error)
+	SaveTransaction(transaction Transaction) (Transaction, error)
 }
 
 type repository struct {
@@ -35,4 +36,14 @@ func (repo *repository) FindTransactionByUserID(userID int) ([]Transaction, erro
 	}
 
 	return transactionList, nil
+}
+
+func (repo *repository) SaveTransaction(transaction Transaction) (Transaction, error) {
+	err := repo.db.Create(&transaction).Error
+
+	if err != nil {
+		return transaction, err
+	}
+
+	return transaction, nil
 }

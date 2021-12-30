@@ -18,7 +18,7 @@ func NewTransactionHandler(service transaction.Service) *transactionHandler {
 }
 
 func (handler *transactionHandler) FindTransactionByCampaignID(context *gin.Context) {
-	var input transaction.TransactionByIDInput
+	var input transaction.FindTransactionByIDInput
 
 	err := context.ShouldBindUri(&input)
 	if err != nil {
@@ -77,6 +77,45 @@ func (handler *transactionHandler) FindTransactionByUserID(context *gin.Context)
 		http.StatusOK,
 		"success",
 		transaction.FormatUserTransactionList(transactionList),
+	)
+	context.JSON(http.StatusOK, response)
+}
+
+func (handler *transactionHandler) CreateTransaction(context *gin.Context) {
+	var input transaction.CreateTransactionInput
+
+	err := context.ShouldBindJSON(&input)
+	if err != nil {
+		response := helper.APIResponse(
+			"Failed to create transaction due to bad inputs",
+			http.StatusUnprocessableEntity,
+			"failed",
+			err.Error(),
+		)
+		context.JSON(http.StatusUnprocessableEntity, response)
+		return
+	}
+
+	currentUser := context.MustGet("currentUser").(user.User)
+	input.User = currentUser
+
+	newTransaction, err := handler.service.CreateTransaction(input)
+	if err != nil {
+		response := helper.APIResponse(
+			"Failed to create transaction due to server error",
+			http.StatusBadRequest,
+			"failed",
+			err.Error(),
+		)
+		context.JSON(http.StatusBadRequest, response)
+		return
+	}
+
+	response := helper.APIResponse(
+		"Transaction successfully created!",
+		http.StatusOK,
+		"success",
+		newTransaction,
 	)
 	context.JSON(http.StatusOK, response)
 }
