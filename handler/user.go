@@ -25,7 +25,6 @@ func (handler *userHandler) RegisterUser(context *gin.Context) {
 	err := context.ShouldBindJSON(&input)
 	if err != nil {
 		errors := helper.FormatError(err)
-
 		errorMessage := gin.H{"errors": errors}
 
 		response := helper.APIResponse(
@@ -232,7 +231,6 @@ func (handler *userHandler) UploadAvatar(context *gin.Context) {
 		context.JSON(http.StatusBadRequest, response)
 	}
 
-	//TODO
 	_, err = handler.userService.UploadAvatar(userID, path)
 	if err != nil {
 		data := gin.H{

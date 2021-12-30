@@ -12,6 +12,7 @@ type Service interface {
 	FindCampaignByID(campaignID CampaignDetailInput) (Campaign, error)
 	CreateCampaign(input CreateCampaignInput) (Campaign, error)
 	UpdateCampaign(campaignID CampaignDetailInput, input CreateCampaignInput) (Campaign, error)
+	CreateCampaignImage(input CreateCampaignImageInput, filePath string) (CampaignImage, error)
 }
 
 type service struct {
@@ -95,4 +96,38 @@ func (s *service) UpdateCampaign(campaignID CampaignDetailInput, input CreateCam
 	}
 
 	return updatedCampaign, nil
+}
+
+func (s *service) CreateCampaignImage(input CreateCampaignImageInput, filePath string) (CampaignImage, error) {
+	campaign, err := s.repository.FindCampaignByID(input.CampaignID)
+	if err != nil {
+		return CampaignImage{}, err
+	}
+
+	if campaign.ID != input.User.ID {
+		return CampaignImage{}, errors.New("could not upload campaign image due to lack of credentials")
+	}
+
+	isPrimary := 0
+
+	if input.IsPrimary {
+		isPrimary = 1
+		_, err := s.repository.MarkAllAsNonPrimary(input.CampaignID)
+		if err != nil {
+			return CampaignImage{}, err
+		}
+	}
+
+	campaignImage := CampaignImage{
+		FileName:   filePath,
+		CampaignID: input.CampaignID,
+		IsPrimary:  isPrimary,
+	}
+
+	createdImage, err := s.repository.UploadCampaignImage(campaignImage)
+	if err != nil {
+		return createdImage, err
+	}
+
+	return createdImage, nil
 }

@@ -8,6 +8,8 @@ type Repository interface {
 	FindCampaignByID(campaignID int) (Campaign, error)
 	CreateCampaign(campaign Campaign) (Campaign, error)
 	UpdateCampaign(campaign Campaign) (Campaign, error)
+	UploadCampaignImage(campaignImage CampaignImage) (CampaignImage, error)
+	MarkAllAsNonPrimary(campaignID int) (bool, error)
 }
 
 type repository struct {
@@ -70,4 +72,22 @@ func (repo *repository) UpdateCampaign(campaign Campaign) (Campaign, error) {
 	}
 
 	return campaign, nil
+}
+
+func (repo *repository) UploadCampaignImage(campaignImage CampaignImage) (CampaignImage, error) {
+	err := repo.db.Create(&campaignImage).Error
+	if err != nil {
+		return campaignImage, err
+	}
+
+	return campaignImage, nil
+}
+
+func (repo *repository) MarkAllAsNonPrimary(campaignID int) (bool, error) {
+	err := repo.db.Model(&CampaignImage{}).Where("campaign_id = ?", campaignID).Update("is_primary", false).Error
+	if err != nil {
+		return false, err
+	}
+
+	return true, nil
 }

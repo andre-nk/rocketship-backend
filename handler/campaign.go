@@ -1,6 +1,7 @@
 package handler
 
 import (
+	"fmt"
 	"net/http"
 	"rocketship/campaign"
 	"rocketship/helper"
@@ -167,5 +168,91 @@ func (handler *campaignHandler) UpdateCampaign(context *gin.Context) {
 		"success",
 		campaign.FormatCampaign(updatedCampaign),
 	)
+	context.JSON(http.StatusOK, response)
+}
+
+func (handler *campaignHandler) UploadCampaignImage(context *gin.Context) {
+	var input campaign.CreateCampaignImageInput
+	currentUser := context.MustGet("currentUser").(user.User)
+	userID := currentUser.ID
+
+	err := context.ShouldBind(&input)
+	if err != nil {
+		errors := helper.FormatError(err)
+		errorMessage := gin.H{"errors": errors}
+
+		response := helper.APIResponse(
+			"Failed to upload campaign image due to bad input",
+			http.StatusUnprocessableEntity,
+			"error",
+			errorMessage,
+		)
+
+		context.JSON(http.StatusUnprocessableEntity, response)
+		return
+	}
+
+	file, err := context.FormFile("file")
+	if err != nil {
+		data := gin.H{
+			"is_uploaded": false,
+		}
+
+		response := helper.APIResponse(
+			"Failed to upload campaign image due to bad input",
+			http.StatusUnprocessableEntity,
+			"error",
+			data,
+		)
+
+		context.JSON(http.StatusUnprocessableEntity, response)
+		return
+	}
+
+	input.User = currentUser
+
+	path := fmt.Sprintf("images/%d-%s", userID, file.Filename)
+	err = context.SaveUploadedFile(file, path)
+
+	if err != nil {
+		errors := helper.FormatError(err)
+		errorMessage := gin.H{"errors": errors}
+
+		data := gin.H{
+			"errors": errorMessage,
+		}
+
+		response := helper.APIResponse(
+			"Failed to save campaign image due to server error",
+			http.StatusBadRequest,
+			"error",
+			data,
+		)
+
+		context.JSON(http.StatusBadRequest, response)
+		return
+	}
+
+	_, err = handler.service.CreateCampaignImage(input, path)
+	if err != nil {
+		response := helper.APIResponse(
+			"Failed to upload campaign image due to server error",
+			http.StatusBadRequest,
+			"error",
+			err.Error(),
+		)
+
+		context.JSON(http.StatusBadRequest, response)
+		return
+	}
+
+	data := gin.H{"is_uploaded": true}
+	response := helper.APIResponse(
+		"Campaign image uploaded",
+		http.StatusOK,
+		"success",
+		data,
+	)
+
 	context.JSON(http.StatusOK, response)
 }
