@@ -79,7 +79,7 @@ func (s *service) UpdateCampaign(campaignID CampaignDetailInput, input CreateCam
 	}
 
 	if input.User.ID != campaign.User.ID {
-		return campaign, errors.New("could not update this campaign due to lack of credentials")
+		return campaign, errors.New("Could not update this campaign due to lack of credentials")
 	}
 
 	campaign.Name = input.Name
@@ -105,7 +105,7 @@ func (s *service) CreateCampaignImage(input CreateCampaignImageInput, filePath s
 	}
 
 	if campaign.ID != input.User.ID {
-		return CampaignImage{}, errors.New("could not upload campaign image due to lack of credentials")
+		return CampaignImage{}, errors.New("Could not upload campaign image due to lack of credentials")
 	}
 
 	isPrimary := 0

@@ -7,6 +7,7 @@ import (
 	"rocketship/campaign"
 	"rocketship/handler"
 	"rocketship/helper"
+	"rocketship/transaction"
 	"rocketship/user"
 	"strings"
 
@@ -37,6 +38,11 @@ func main() {
 	campaignService := campaign.NewService(campaignRepository)
 	campaignHandler := handler.NewCampaignHandler(campaignService)
 
+	//TRANSACTION
+	transactionRepository := transaction.NewRepository(db)
+	transactionService := transaction.NewService(transactionRepository, campaignRepository)
+	transactionHandler := handler.NewTransactionHandler(transactionService)
+
 	//SANDBOX HERE===========================================
 
 	//SANDBOX END============================================
@@ -58,6 +64,9 @@ func main() {
 	api.POST("/campaigns", authMiddleware(authService, userService), campaignHandler.CreateCampaign)
 	api.POST("/campaign-images", authMiddleware(authService, userService), campaignHandler.UploadCampaignImage)
 	api.PUT("/campaigns/:id", authMiddleware(authService, userService), campaignHandler.UpdateCampaign)
+
+	//TRANSACTION ROUTES
+	api.GET("/campaigns/:id/transactions", authMiddleware(authService, userService), transactionHandler.FindTransactionByCampaignID)
 
 	router.Run()
 }
