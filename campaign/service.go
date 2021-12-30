@@ -1,6 +1,7 @@
 package campaign
 
 import (
+	"errors"
 	"fmt"
 
 	"github.com/gosimple/slug"
@@ -10,6 +11,7 @@ type Service interface {
 	FindCampaigns(userID int) ([]Campaign, error)
 	FindCampaignByID(campaignID CampaignDetailInput) (Campaign, error)
 	CreateCampaign(input CreateCampaignInput) (Campaign, error)
+	UpdateCampaign(campaignID CampaignDetailInput, input CreateCampaignInput) (Campaign, error)
 }
 
 type service struct {
@@ -67,4 +69,30 @@ func (s *service) CreateCampaign(input CreateCampaignInput) (Campaign, error) {
 	}
 
 	return newCampaign, nil
+}
+
+func (s *service) UpdateCampaign(campaignID CampaignDetailInput, input CreateCampaignInput) (Campaign, error) {
+	campaign, err := s.repository.FindCampaignByID(campaignID.ID)
+	if err != nil {
+		return campaign, err
+	}
+
+	if input.User.ID != campaign.User.ID {
+		return campaign, errors.New("could not update this campaign due to lack of credentials")
+	}
+
+	campaign.Name = input.Name
+	campaign.Description = input.Description
+	campaign.ShortDescription = input.ShortDescription
+	campaign.GoalAmount = input.GoalAmount
+	campaign.Perks = input.Perks
+	slugWireframe := fmt.Sprintf("%s %d", input.Name, input.User.ID)
+	campaign.Slug = slug.Make(slugWireframe)
+
+	updatedCampaign, err := s.repository.UpdateCampaign(campaign)
+	if err != nil {
+		return updatedCampaign, err
+	}
+
+	return updatedCampaign, nil
 }

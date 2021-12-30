@@ -7,6 +7,7 @@ type Repository interface {
 	FindCampaignByUserID(userID int) ([]Campaign, error)
 	FindCampaignByID(campaignID int) (Campaign, error)
 	CreateCampaign(campaign Campaign) (Campaign, error)
+	UpdateCampaign(campaign Campaign) (Campaign, error)
 }
 
 type repository struct {
@@ -53,6 +54,16 @@ func (repo *repository) FindCampaignByID(campaignID int) (Campaign, error) {
 
 func (repo *repository) CreateCampaign(campaign Campaign) (Campaign, error) {
 	err := repo.db.Create(&campaign).Error
+
+	if err != nil {
+		return campaign, err
+	}
+
+	return campaign, nil
+}
+
+func (repo *repository) UpdateCampaign(campaign Campaign) (Campaign, error) {
+	err := repo.db.Save(&campaign).Error
 
 	if err != nil {
 		return campaign, err
