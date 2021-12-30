@@ -51,7 +51,32 @@ func (handler *transactionHandler) FindTransactionByCampaignID(context *gin.Cont
 		"Transaction fetched",
 		http.StatusOK,
 		"success",
-		transaction.FormatTransactionList(transactionList),
+		transaction.FormatCampaignTransactionList(transactionList),
+	)
+	context.JSON(http.StatusOK, response)
+}
+
+func (handler *transactionHandler) FindTransactionByUserID(context *gin.Context) {
+	currentUser := context.MustGet("currentUser").(user.User)
+	userID := currentUser.ID
+
+	transactionList, err := handler.service.FindTransactionByUserID(userID)
+	if err != nil {
+		response := helper.APIResponse(
+			"Failed to get transactions due to server error",
+			http.StatusBadRequest,
+			"error",
+			err.Error(),
+		)
+		context.JSON(http.StatusBadRequest, response)
+		return
+	}
+
+	response := helper.APIResponse(
+		"Transaction fetched",
+		http.StatusOK,
+		"success",
+		transaction.FormatUserTransactionList(transactionList),
 	)
 	context.JSON(http.StatusOK, response)
 }
