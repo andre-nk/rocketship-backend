@@ -1,10 +1,13 @@
 package payment
 
 import (
+	"log"
+	"os"
 	"rocketship/campaign"
 	"rocketship/user"
 	"strconv"
 
+	"github.com/joho/godotenv"
 	"github.com/veritrans/go-midtrans"
 )
 
@@ -20,10 +23,22 @@ func NewPaymentService(campaignRepository campaign.Repository) *service {
 	return &service{campaignRepository}
 }
 
+func goDotEnvVariable(key string) string {
+
+	// load .env file
+	err := godotenv.Load(".env")
+
+	if err != nil {
+		log.Fatalf("Error loading .env file")
+	}
+
+	return os.Getenv(key)
+}
+
 func (service *service) GetPaymentURL(transaction Transaction, user user.User) (string, error) {
 	midclient := midtrans.NewClient()
-	midclient.ServerKey = ""
-	midclient.ClientKey = ""
+	midclient.ServerKey = goDotEnvVariable("SERVER_KEY")
+	midclient.ClientKey = goDotEnvVariable("CLIENT_KEY")
 	midclient.APIEnvType = midtrans.Sandbox
 
 	snapGateway := midtrans.SnapGateway{

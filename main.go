@@ -13,6 +13,7 @@ import (
 	"strings"
 
 	"github.com/dgrijalva/jwt-go"
+	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
 	"gorm.io/driver/mysql"
 	"gorm.io/gorm"
@@ -53,10 +54,12 @@ func main() {
 
 	//ROUTER CONFIG
 	router := gin.Default()
+	router.Use(cors.Default())
 	router.Static("/images", "./images")
 	api := router.Group("api/v1")
 
 	//AUTH ROUTES
+	api.GET("/users", authMiddleware(authService, userService), userHandler.FetchCurrentUser)
 	api.POST("/users", userHandler.RegisterUser)
 	api.POST("/sessions", userHandler.Login)
 	api.POST("/validate_email", userHandler.ValidateEmail)
