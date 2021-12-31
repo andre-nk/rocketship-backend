@@ -1,20 +1,23 @@
 package payment
 
 import (
+	"rocketship/campaign"
 	"rocketship/user"
 	"strconv"
 
 	"github.com/veritrans/go-midtrans"
 )
 
-type service struct{}
+type service struct {
+	campaignRepository campaign.Repository
+}
 
 type Service interface {
 	GetPaymentURL(transaction Transaction, user user.User) (string, error)
 }
 
-func NewPaymentService() *service {
-	return &service{}
+func NewPaymentService(campaignRepository campaign.Repository) *service {
+	return &service{campaignRepository}
 }
 
 func (service *service) GetPaymentURL(transaction Transaction, user user.User) (string, error) {

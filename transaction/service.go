@@ -4,12 +4,14 @@ import (
 	"errors"
 	"rocketship/campaign"
 	"rocketship/payment"
+	"strconv"
 )
 
 type Service interface {
 	FindTransactionByCampaignID(campaignID FindTransactionByIDInput) ([]Transaction, error)
 	FindTransactionByUserID(userID int) ([]Transaction, error)
 	CreateTransaction(input CreateTransactionInput) (Transaction, error)
+	ProcessPayment(input TransactionNotificationInput) error
 }
 
 type service struct {
@@ -79,4 +81,43 @@ func (service *service) CreateTransaction(input CreateTransactionInput) (Transac
 	}
 
 	return newTransaction, nil
+}
+
+func (service *service) ProcessPayment(input TransactionNotificationInput) error {
+	transactionID, _ := strconv.Atoi(input.OrderID)
+
+	transaction, err := service.repository.FindTransactionByID(transactionID)
+	if err != nil {
+		return err
+	}
+
+	if input.PaymentType == "credit_card" && input.TransactionStatus == "capture" && input.FraudStatus == "accept" {
+		transaction.Status = "paid"
+	} else if input.TransactionStatus == "settlement" {
+		transaction.Status = "paid"
+	} else if input.TransactionStatus == "deny" || input.TransactionStatus == "expire" || input.TransactionStatus == "cancel" {
+		transaction.Status = "cancelled"
+	}
+
+	updatedTransaction, err := service.repository.UpdateTransaction(transaction)
+	if err != nil {
+		return err
+	}
+
+	campaign, err := service.campaign.FindCampaignByID(updatedTransaction.CampaignID)
+	if err != nil {
+		return err
+	}
+
+	if updatedTransaction.Status == "paid" {
+		campaign.FunderAmount = campaign.FunderAmount + 1
+		campaign.CurrentAmount = campaign.CurrentAmount + updatedTransaction.Amount
+
+		_, err := service.campaign.UpdateCampaign(campaign)
+		if err != nil {
+			return err
+		}
+	}
+
+	return nil
 }

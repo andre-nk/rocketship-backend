@@ -40,12 +40,12 @@ func main() {
 	campaignHandler := handler.NewCampaignHandler(campaignService)
 
 	//PAYMENT
-	paymentService := payment.NewPaymentService()
+	paymentService := payment.NewPaymentService(campaignRepository)
 
 	//TRANSACTION
 	transactionRepository := transaction.NewRepository(db)
 	transactionService := transaction.NewService(transactionRepository, campaignRepository, paymentService)
-	transactionHandler := handler.NewTransactionHandler(transactionService)
+	transactionHandler := handler.NewTransactionHandler(transactionService, paymentService)
 
 	//SANDBOX HERE===========================================
 
@@ -73,6 +73,9 @@ func main() {
 	api.GET("/campaigns/:id/transactions", authMiddleware(authService, userService), transactionHandler.FindTransactionByCampaignID)
 	api.GET("/transactions", authMiddleware(authService, userService), transactionHandler.FindTransactionByUserID)
 	api.POST("/transactions", authMiddleware(authService, userService), transactionHandler.CreateTransaction)
+
+	//PAYMENT ROUTES
+	api.POST("/transactions/notification", transactionHandler.GetTransactionNotification)
 
 	router.Run()
 }
