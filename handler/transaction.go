@@ -115,7 +115,7 @@ func (handler *transactionHandler) CreateTransaction(context *gin.Context) {
 		"Transaction successfully created!",
 		http.StatusOK,
 		"success",
-		newTransaction,
+		transaction.FormatTransaction(newTransaction),
 	)
 	context.JSON(http.StatusOK, response)
 }

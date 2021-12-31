@@ -7,6 +7,7 @@ import (
 	"rocketship/campaign"
 	"rocketship/handler"
 	"rocketship/helper"
+	"rocketship/payment"
 	"rocketship/transaction"
 	"rocketship/user"
 	"strings"
@@ -38,22 +39,16 @@ func main() {
 	campaignService := campaign.NewService(campaignRepository)
 	campaignHandler := handler.NewCampaignHandler(campaignService)
 
+	//PAYMENT
+	paymentService := payment.NewPaymentService()
+
 	//TRANSACTION
 	transactionRepository := transaction.NewRepository(db)
-	transactionService := transaction.NewService(transactionRepository, campaignRepository)
+	transactionService := transaction.NewService(transactionRepository, campaignRepository, paymentService)
 	transactionHandler := handler.NewTransactionHandler(transactionService)
 
 	//SANDBOX HERE===========================================
 
-	testUser, _ := userService.FindUserByID(5)
-
-	input := transaction.CreateTransactionInput{
-		CampaignID: 1,
-		Amount:     100,
-		User:       testUser,
-	}
-
-	transactionService.CreateTransaction(input)
 	//SANDBOX END============================================
 
 	//ROUTER CONFIG

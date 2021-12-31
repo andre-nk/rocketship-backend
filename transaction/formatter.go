@@ -2,6 +2,16 @@ package transaction
 
 import "time"
 
+type TransactionFormatter struct {
+	ID         int    `json:"id"`
+	Amount     int    `json:"amount"`
+	UserID     int    `json:"user_id"`
+	CampaignID int    `json:"campaign_id"`
+	Status     string `json:"status"`
+	Code       string `json:"code"`
+	PaymentURL string `json:"payment_url"`
+}
+
 type CampaignTransactionFormatter struct {
 	ID        int       `json:"id"`
 	Name      string    `json:"name"`
@@ -20,6 +30,20 @@ type UserTransactionFormatter struct {
 type CampaignInfoFormatter struct {
 	Name     string `json:"name"`
 	ImageURL string `json:"image_url"`
+}
+
+func FormatTransaction(transaction Transaction) TransactionFormatter {
+	formatter := TransactionFormatter{
+		ID:         transaction.ID,
+		CampaignID: transaction.CampaignID,
+		UserID:     transaction.UserID,
+		Amount:     transaction.Amount,
+		Status:     transaction.Status,
+		Code:       transaction.Code,
+		PaymentURL: transaction.PaymentURL,
+	}
+
+	return formatter
 }
 
 func FormatCampaignTransaction(transaction Transaction) CampaignTransactionFormatter {

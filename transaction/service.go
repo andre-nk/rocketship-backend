@@ -3,6 +3,7 @@ package transaction
 import (
 	"errors"
 	"rocketship/campaign"
+	"rocketship/payment"
 )
 
 type Service interface {
@@ -12,12 +13,13 @@ type Service interface {
 }
 
 type service struct {
-	repository Repository
-	campaign   campaign.Repository
+	repository     Repository
+	campaign       campaign.Repository
+	paymentService payment.Service
 }
 
-func NewService(repository Repository, campaignRepository campaign.Repository) *service {
-	return &service{repository, campaignRepository}
+func NewService(repository Repository, campaignRepository campaign.Repository, paymentService payment.Service) *service {
+	return &service{repository, campaignRepository, paymentService}
 }
 
 func (service *service) FindTransactionByCampaignID(input FindTransactionByIDInput) ([]Transaction, error) {
@@ -27,7 +29,7 @@ func (service *service) FindTransactionByCampaignID(input FindTransactionByIDInp
 	}
 
 	if campaign.ID != input.User.ID {
-		return []Transaction{}, errors.New("Could not find transactions due to lack of credentials")
+		return []Transaction{}, errors.New("could not find transactions due to lack of credentials")
 	}
 
 	transactionList, err := service.repository.FindTransactionByCampaignID(input.ID)
@@ -56,6 +58,22 @@ func (service *service) CreateTransaction(input CreateTransactionInput) (Transac
 	}
 
 	newTransaction, err := service.repository.SaveTransaction(transaction)
+	if err != nil {
+		return newTransaction, err
+	}
+
+	paymentTransaction := payment.Transaction{
+		ID:     newTransaction.ID,
+		Amount: newTransaction.Amount,
+	}
+
+	paymentURL, err := service.paymentService.GetPaymentURL(paymentTransaction, input.User)
+	if err != nil {
+		return newTransaction, err
+	}
+
+	newTransaction.PaymentURL = paymentURL
+	newTransaction, err = service.repository.UpdateTransaction(newTransaction)
 	if err != nil {
 		return newTransaction, err
 	}
