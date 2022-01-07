@@ -30,7 +30,7 @@ func (service *service) FindTransactionByCampaignID(input FindTransactionByIDInp
 		return []Transaction{}, err
 	}
 
-	if campaign.ID != input.User.ID {
+	if campaign.UserID != input.User.ID {
 		return []Transaction{}, errors.New("could not find transactions due to lack of credentials")
 	}
 
