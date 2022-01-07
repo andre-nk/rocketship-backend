@@ -3,6 +3,7 @@ package main
 import (
 	"log"
 	"net/http"
+	"os"
 	"rocketship/auth"
 	"rocketship/campaign"
 	"rocketship/handler"
@@ -14,13 +15,31 @@ import (
 
 	"github.com/dgrijalva/jwt-go"
 	"github.com/gin-gonic/gin"
+	"github.com/joho/godotenv"
 	cors "github.com/rs/cors/wrapper/gin"
 	"gorm.io/driver/mysql"
 	"gorm.io/gorm"
 )
 
+func goDotEnvVariable(key string) string {
+
+	// load .env file
+	err := godotenv.Load(".env")
+
+	if err != nil {
+		log.Fatalf("Error loading .env file")
+	}
+
+	return os.Getenv(key)
+}
+
 func main() {
-	dsn := "root:@tcp(127.0.0.1:1000)/rocketship?charset=utf8mb4&parseTime=True&loc=Local"
+	db_name := goDotEnvVariable("DB_NAME")
+	db_pass := goDotEnvVariable("DB_PASS")
+	db_url := goDotEnvVariable("DB_URL")
+	db_port := goDotEnvVariable("DB_PORT")
+
+	dsn := db_name + ":" + db_pass + "@tcp(" + db_url + ":" + db_port + ")/" + db_name + "?charset=utf8mb4&parseTime=True&loc=Local"
 	db, err := gorm.Open(mysql.Open(dsn), &gorm.Config{})
 
 	if err != nil {
