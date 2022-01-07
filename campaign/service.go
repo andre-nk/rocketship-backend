@@ -104,7 +104,7 @@ func (s *service) CreateCampaignImage(input CreateCampaignImageInput, filePath s
 		return CampaignImage{}, err
 	}
 
-	if campaign.ID != input.User.ID {
+	if campaign.UserID != input.User.ID {
 		return CampaignImage{}, errors.New("Could not upload campaign image due to lack of credentials")
 	}
 
